@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>JMKCC Admin Panel</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #1E3A8A; --primary-light: #DBEAFE;
+      --primary-grad: linear-gradient(135deg, #1E3A8A 0%, #3B82F6 100%);
+      --green: #059669; --green-light: #D1FAE5;
+      --bg: #F0F4F8; --card-bg: #FFFFFF; --text: #1E293B; --text-light: #64748B; --border: #E2E8F0;
+      --font-head: 'Poppins', sans-serif; --font-body: 'Roboto', sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: var(--font-body); }
+    body { background: var(--bg); color: var(--text); display: flex; height: 100vh; overflow: hidden; }
+    
+    /* LOGIN SCREEN */
+    #login-screen { position: fixed; inset: 0; background: var(--bg); z-index: 1000; display: flex; justify-content: center; align-items: center; padding: 20px; }
+    .login-box { background: #fff; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; }
+    .login-box h2 { color: var(--primary); font-family: var(--font-head); margin-bottom: 20px; }
+    .input-group { margin-bottom: 15px; text-align: left; }
+    .input-group label { display: block; font-size: 12px; font-weight: 700; color: var(--primary); margin-bottom: 6px; }
+    .input-group input, .input-group select, .input-group textarea { width: 100%; padding: 12px; border: 2px solid var(--border); border-radius: 10px; font-family: var(--font-head); font-size: 14px; outline: none; transition: 0.2s; }
+    .input-group input:focus { border-color: var(--primary); }
+    
+    /* BUTTONS */
+    .btn { padding: 12px 20px; border: none; border-radius: 10px; font-family: var(--font-head); font-weight: 700; font-size: 14px; cursor: pointer; transition: 0.2s; display: inline-block; }
+    .btn-main { background: var(--primary-grad); color: #fff; width: 100%; }
+    .btn-green { background: var(--green); color: #fff; }
+    .btn-red { background: #DC2626; color: #fff; padding: 8px 12px; font-size: 12px; }
+    .btn-sm { padding: 6px 12px; font-size: 12px; }
+    
+    /* SIDEBAR */
+    #sidebar { width: 260px; background: var(--primary); color: #fff; display: flex; flex-direction: column; transition: 0.3s; flex-shrink: 0; overflow-y: auto; }
+    .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .sidebar-header h2 { font-family: var(--font-head); font-size: 20px; margin-bottom: 4px; }
+    .sidebar-header p { font-size: 12px; opacity: 0.7; }
+    .menu-item { padding: 15px 20px; display: flex; align-items: center; gap: 12px; cursor: pointer; font-family: var(--font-head); font-weight: 600; transition: 0.2s; border-left: 4px solid transparent; }
+    .menu-item:hover, .menu-item.active { background: rgba(255,255,255,0.1); border-left-color: #fff; }
+    .menu-item i { width: 20px; text-align: center; font-style: normal; }
+    
+    /* MAIN CONTENT */
+    #main-content { flex: 1; padding: 20px; overflow-y: auto; position: relative; }
+    .page-section { display: none; animation: fadeIn 0.3s; }
+    .page-section.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .header-top h1 { font-family: var(--font-head); font-size: 24px; color: var(--primary); }
+    
+    /* CARDS */
+    .card { background: #fff; border-radius: 16px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); margin-bottom: 20px; }
+    .card h3 { font-family: var(--font-head); font-size: 18px; margin-bottom: 15px; color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+    
+    /* LISTS & TABLES */
+    .data-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border: 1px solid var(--border); border-radius: 10px; margin-bottom: 10px; background: #F8FAFC; }
+    .data-info h4 { font-family: var(--font-head); font-size: 15px; margin-bottom: 4px; }
+    .data-info p { font-size: 12px; color: var(--text-light); }
+
+    /* DYNAMIC QUESTION BUILDER */
+    .q-box { border: 2px dashed var(--primary-light); padding: 15px; border-radius: 12px; margin-bottom: 15px; background: #F0F9FF; position: relative; }
+    .q-box h4 { margin-bottom: 10px; color: var(--primary); }
+    .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+    .option-input-group { display: flex; align-items: center; gap: 8px; }
+    .option-input-group input[type="radio"] { width: 20px; height: 20px; cursor: pointer; accent-color: var(--green); }
+    
+    /* MOBILE RESPONSIVE */
+    .mobile-header { display: none; background: var(--primary); color: #fff; padding: 15px; align-items: center; justify-content: space-between; }
+    @media(max-width: 768px) {
+      body { flex-direction: column; }
+      .mobile-header { display: flex; }
+      #sidebar { position: fixed; left: -100%; height: 100vh; z-index: 999; width: 250px; }
+      #sidebar.open { left: 0; }
+      #main-content { padding: 15px; height: calc(100vh - 60px); }
+      .options-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- LOGIN SCREEN -->
+  <div id="login-screen">
+    <div class="login-box">
+      <h2>Admin Login</h2>
+      <p style="font-size:13px; color:var(--text-light); margin-bottom:20px;">Only authorized admins can access this panel.</p>
+      <div class="input-group">
+        <label>Email</label>
+        <input type="email" id="adminEmail" placeholder="admin@jmkcc.com" />
+      </div>
+      <div class="input-group">
+        <label>Password</label>
+        <input type="password" id="adminPass" placeholder="Enter password" />
+      </div>
+      <button class="btn btn-main" onclick="adminLogin()" id="btnLogin">Login</button>
+      <p id="loginMsg" style="color:red; font-size:13px; margin-top:10px; font-weight:bold;"></p>
+    </div>
+  </div>
+
+  <!-- MOBILE HEADER -->
+  <div class="mobile-header">
+    <h3>JMKCC Admin</h3>
+    <button class="btn btn-sm" onclick="toggleSidebar()" style="background:rgba(255,255,255,0.2); color:#fff;">Menu</button>
+  </div>
+
+  <!-- MAIN APP -->
+  <div id="app" style="display:none; width:100%; height:100%;">
+    
+    <!-- SIDEBAR -->
+    <div id="sidebar">
+      <div class="sidebar-header">
+        <h2>JMKCC Admin</h2>
+        <p id="admin-email-display">admin@jmkcc.com</p>
+      </div>
+      <div class="menu-item active" onclick="switchTab('dashboard', this)"><i>📊</i> Dashboard</div>
+      <div class="menu-item" onclick="switchTab('banners', this)"><i>🖼️</i> Banners & Chat</div>
+      <div class="menu-item" onclick="switchTab('subjects', this)"><i>📚</i> Subjects</div>
+      <div class="menu-item" onclick="switchTab('tests', this)"><i>📝</i> Manage Tests</div>
+      <div class="menu-item" onclick="switchTab('courses', this)"><i>🎓</i> Courses</div>
+      <div class="menu-item" onclick="switchTab('notes', this)"><i>📄</i> Notes & Timetable</div>
+      <div class="menu-item" onclick="adminLogout()" style="margin-top:auto; color:#FCA5A5;"><i>🚪</i> Logout</div>
+    </div>
+
+    <!-- MAIN CONTENT AREA -->
+    <div id="main-content">
+
+      <!-- 1. DASHBOARD -->
+      <div id="tab-dashboard" class="page-section active">
+        <div class="header-top"><h1>Dashboard</h1></div>
+        <div class="card">
+          <h3>Welcome Admin!</h3>
+          <p style="font-size:14px; line-height:1.6; color:var(--text-light);">Yahan se aap apni puri app ko control kar sakte hain. Left menu se kisi bhi section par click karein aur data add/edit karein. Data save hote hi aapke User Panel (App) mein update ho jayega.</p>
+        </div>
+      </div>
+
+      <!-- 2. BANNERS & CHAT -->
+      <div id="tab-banners" class="page-section">
+        <div class="header-top"><h1>Banners & Chat Settings</h1></div>
+        <div class="card">
+          <h3>Update App Settings</h3>
+          <div class="input-group">
+            <label>Banner Image URLs (Comma separated)</label>
+            <textarea id="set-banners" rows="3" placeholder="https://img1.jpg, https://img2.jpg"></textarea>
+          </div>
+          <div class="input-group">
+            <label>Chat Title</label>
+            <input type="text" id="set-chat-title" placeholder="Namaste Student!" />
+          </div>
+          <div class="input-group">
+            <label>Chat Message</label>
+            <input type="text" id="set-chat-msg" placeholder="Kya dikkat aa rahi hai?" />
+          </div>
+          <div class="input-group">
+            <label>WhatsApp Link</label>
+            <input type="text" id="set-chat-link" placeholder="https://wa.me/919876543210" />
+          </div>
+          <button class="btn btn-green" onclick="saveSettings()">Save Settings</button>
+        </div>
+      </div>
+
+      <!-- 3. SUBJECTS -->
+      <div id="tab-subjects" class="page-section">
+        <div class="header-top"><h1>Manage Subjects</h1></div>
+        <div class="card">
+          <h3>Add New Subject</h3>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
+            <div class="input-group"><label>Subject Name</label><input type="text" id="sub-name" placeholder="e.g. Physics" /></div>
+            <div class="input-group"><label>Class</label>
+              <select id="sub-class"><option value="9th">9th</option><option value="10th">10th</option><option value="11th">11th</option><option value="12th">12th</option></select>
+            </div>
+            <div class="input-group"><label>Order (1, 2, 3...)</label><input type="number" id="sub-order" value="1" /></div>
+            <div class="input-group"><label>Icon URL (Optional)</label><input type="text" id="sub-icon" placeholder="Image URL" /></div>
+          </div>
+          <button class="btn btn-green" onclick="addSubject()">+ Add Subject</button>
+        </div>
+        <div class="card">
+          <h3>Existing Subjects</h3>
+          <div id="subjects-list"></div>
+        </div>
+      </div>
+
+      <!-- 4. TESTS (The Big One) -->
+      <div id="tab-tests" class="page-section">
+        <div class="header-top"><h1>Manage Tests</h1></div>
+        
+        <!-- Test Info Form -->
+        <div class="card">
+          <h3>1. Test Details</h3>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
+            <div class="input-group"><label>Test Title</label><input type="text" id="test-title" placeholder="Physics Chapter 1" /></div>
+            <div class="input-group"><label>Subject</label><input type="text" id="test-subject" placeholder="Physics" /></div>
+            <div class="input-group"><label>Class</label>
+              <select id="test-class"><option value="9th">9th</option><option value="10th">10th</option><option value="11th">11th</option><option value="12th">12th</option></select>
+            </div>
+            <div class="input-group"><label>Type</label>
+              <select id="test-type"><option value="free">Free</option><option value="paid">Paid</option></select>
+            </div>
+            <div class="input-group"><label>Timer (in Minutes)</label><input type="number" id="test-duration" value="60" /></div>
+            <div class="input-group"><label>Marks per Question</label><input type="number" id="test-marks" value="1" /></div>
+            <div class="input-group"><label>Negative Marking (0 if none)</label><input type="number" id="test-negative" value="0.25" step="0.01" /></div>
+            <div class="input-group"><label>Test Banner Image URL (Optional)</label><input type="text" id="test-image" placeholder="https://..." /></div>
+          </div>
+        </div>
+
+        <!-- Question Builder -->
+        <div class="card">
+          <h3>2. Add Questions</h3>
+          <div id="questions-container"></div>
+          
+          <div class="q-box" id="question-form" style="display:none;">
+            <h4>New Question</h4>
+            <div class="input-group"><label>Question Text</label><textarea id="q-text" rows="2"></textarea></div>
+            <div class="input-group"><label>Question Image URL (Optional)</label><input type="text" id="q-image" /></div>
+            
+            <label style="font-size:12px; font-weight:bold; color:var(--primary); display:block; margin-top:10px;">Options (Select the correct answer radio button)</label>
+            <div class="options-grid">
+              <div class="option-input-group"><input type="radio" name="correct_opt" value="0" /><input type="text" id="q-opt-0" placeholder="Option A" /></div>
+              <div class="option-input-group"><input type="radio" name="correct_opt" value="1" /><input type="text" id="q-opt-1" placeholder="Option B" /></div>
+              <div class="option-input-group"><input type="radio" name="correct_opt" value="2" /><input type="text" id="q-opt-2" placeholder="Option C" /></div>
+              <div class="option-input-group"><input type="radio" name="correct_opt" value="3" /><input type="text" id="q-opt-3" placeholder="Option D" /></div>
+            </div>
+            <button class="btn btn-main" style="margin-top:15px; background:var(--primary);" onclick="addQuestionToTemp()">Add Question to List</button>
+          </div>
+          
+          <button class="btn" style="background:#E2E8F0; color:var(--text); width:100%; margin-bottom:10px;" onclick="document.getElementById('question-form').style.display='block'">+ Add New Question</button>
+        </div>
+
+        <div class="card">
+          <h3>3. Publish</h3>
+          <p style="font-size:14px; color:var(--text-light); margin-bottom:10px;">Questions added: <b id="q-count-display">0</b></p>
+          <button class="btn btn-green" style="width:100%; padding:15px;" onclick="publishTest()">🚀 Publish Test to App</button>
+        </div>
+
+        <div class="card">
+          <h3>Existing Tests</h3>
+          <div id="tests-list"></div>
+        </div>
+      </div>
+
+      <!-- 5. COURSES -->
+      <div id="tab-courses" class="page-section">
+        <div class="header-top"><h1>Manage Courses</h1></div>
+        <div class="card">
+          <h3>Add New Course</h3>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
+            <div class="input-group"><label>Title</label><input type="text" id="crs-title" /></div>
+            <div class="input-group"><label>Subject</label><input type="text" id="crs-subject" /></div>
+            <div class="input-group"><label>Class</label>
+              <select id="crs-class"><option value="9th">9th</option><option value="10th">10th</option><option value="11th">11th</option><option value="12th">12th</option></select>
+            </div>
+            <div class="input-group"><label>Type</label>
+              <select id="crs-type"><option value="free">Free</option><option value="paid">Paid</option></select>
+            </div>
+            <div class="input-group"><label>Price (₹) (0 for free)</label><input type="number" id="crs-price" value="0" /></div>
+            <div class="input-group"><label>Image URL</label><input type="text" id="crs-image" /></div>
+            <div class="input-group"><label>Video URL (Optional)</label><input type="text" id="crs-video" /></div>
+          </div>
+          <button class="btn btn-green" onclick="addCourse()">+ Add Course</button>
+        </div>
+        <div class="card">
+          <h3>Existing Courses</h3>
+          <div id="courses-list"></div>
+        </div>
+      </div>
+
+      <!-- 6. NOTES & TIMETABLE -->
+      <div id="tab-notes" class="page-section">
+        <div class="header-top"><h1>Notes & Timetable</h1></div>
+        <div class="card">
+          <h3>Add Note (PDF)</h3>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
+            <div class="input-group"><label>Title</label><input type="text" id="note-title" /></div>
+            <div class="input-group"><label>Subject</label><input type="text" id="note-subject" /></div>
+            <div class="input-group"><label>Class</label>
+              <select id="note-class"><option value="9th">9th</option><option value="10th">10th</option><option value="11th">11th</option><option value="12th">12th</option></select>
+            </div>
+            <div class="input-group"><label>PDF Link</label><input type="text" id="note-pdf" placeholder="Google Drive Link" /></div>
+          </div>
+          <button class="btn btn-green" onclick="addNote()">+ Add Note</button>
+        </div>
+
+        <div class="card">
+          <h3>Add Timetable</h3>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
+            <div class="input-group"><label>Class</label>
+              <select id="tt-class"><option value="9th">9th</option><option value="10th">10th</option><option value="11th">11th</option><option value="12th">12th</option></select>
+            </div>
+            <div class="input-group"><label>Day (e.g. Monday)</label><input type="text" id="tt-day" /></div>
+            <div class="input-group"><label>Subject</label><input type="text" id="tt-subject" /></div>
+            <div class="input-group"><label>Time (e.g. 10 AM - 11 AM)</label><input type="text" id="tt-time" /></div>
+          </div>
+          <button class="btn btn-green" onclick="addTimetable()">+ Add Timetable</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- FIREBASE SCRIPTS -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { getFirestore, doc, setDoc, getDoc, collection, getDocs, query, where, addDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBvSzyAokTjxghA1kE1Ax97j4q_HeADtRI",
+      authDomain: "jmkcc-c09c7.firebaseapp.com",
+      projectId: "jmkcc-c09c7",
+      storageBucket: "jmkcc-c09c7.firebasestorage.app",
+      messagingSenderId: "659653592447",
+      appId: "1:659653592447:web:6d442dc59550f14226c64a"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    // ⚠️ यहाँ अपनी ईमेल डालें (जो Firebase Auth में बनाई है)
+    const ADMIN_EMAIL = "admin@jmkcc.com"; 
+
+    let tempQuestions = []; // टेस्ट के सवाल यहाँ सेव होंगे
+
+    // ===== AUTH =====
+    window.adminLogin = async () => {
+      const email = document.getElementById('adminEmail').value.trim();
+      const pass = document.getElementById('adminPass').value;
+      const msg = document.getElementById('loginMsg');
+      const btn = document.getElementById('btnLogin');
+
+      if(email !== ADMIN_EMAIL) {
+        msg.innerText = "❌ Unauthorized Email! Only admin can login.";
+        return;
+      }
+
+      btn.innerText = "Logging in..."; btn.disabled = true;
+      try {
+        await signInWithEmailAndPassword(auth, email, pass);
+      } catch(err) {
+        msg.innerText = "❌ " + err.message;
+        btn.innerText = "Login"; btn.disabled = false;
+      }
+    };
+
+    window.adminLogout = () => {
+      if(confirm("Logout from Admin Panel?")) signOut(auth);
+    };
+
+    onAuthStateChanged(auth, user => {
+      if(user && user.email === ADMIN_EMAIL) {
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('app').style.display = 'flex';
+        document.getElementById('admin-email-display').innerText = user.email;
+        loadDashboardData();
+      } else {
+        document.getElementById('login-screen').style.display = 'flex';
+        document.getElementById('app').style.display = 'none';
+        if(user) {
+          alert("Unauthorized access! Logging out.");
+          signOut(auth);
+        }
+      }
+    });
+
+    // ===== NAVIGATION =====
+    window.toggleSidebar = () => {
+      document.getElementById('sidebar').classList.toggle('open');
+    };
+
+    window.switchTab = (tabId, el) => {
+      document.querySelectorAll('.page-section').forEach(p => p.classList.remove('active'));
+      document.getElementById('tab-' + tabId).classList.add('active');
+      document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
+      el.classList.add('active');
+      if(window.innerWidth < 768) document.getElementById('sidebar').classList.remove('open');
+    };
+
+    // ===== SETTINGS (BANNERS & CHAT) =====
+    async function loadDashboardData() {
+      const snap = await getDoc(doc(db, "settings", "app"));
+      if(snap.exists()) {
+        const d = snap.data();
+        document.getElementById('set-banners').value = (d.banners || []).join(', ');
+        document.getElementById('set-chat-title').value = d.chatTitle || '';
+        document.getElementById('set-chat-msg').value = d.chatMessage || '';
+        document.getElementById('set-chat-link').value = d.chatLink || '';
+      }
+      loadSubjectsList();
+      loadTestsList();
+      loadCoursesList();
+    }
+
+    window.saveSettings = async () => {
+      const banners = document.getElementById('set-banners').value.split(',').map(s => s.trim()).filter(s => s);
+      const chatTitle = document.getElementById('set-chat-title').value;
+      const chatMessage = document.getElementById('set-chat-msg').value;
+      const chatLink = document.getElementById('set-chat-link').value;
+
+      try {
+        await setDoc(doc(db, "settings", "app"), { banners, chatTitle, chatMessage, chatLink }, { merge: true });
+        alert("✅ App Settings Saved!");
+      } catch(e) { alert("Error: " + e.message); }
+    };
+
+    // ===== SUBJECTS =====
+    window.addSubject = async () => {
+      const name = document.getElementById('sub-name').value;
+      const cls = document.getElementById('sub-class').value;
+      const order = Number(document.getElementById('sub-order').value);
+      const icon = document.getElementById('sub-icon').value;
+
+      if(!name) return alert("Subject name required!");
+      try {
+        await addDoc(collection(db, "subjects"), { name, class: cls, order, icon });
+        alert("✅ Subject Added!");
+        document.getElementById('sub-name').value = '';
+        loadSubjectsList();
+      } catch(e) { alert(e.message); }
+    };
+
+    async function loadSubjectsList() {
+      const c = document.getElementById('subjects-list');
+      c.innerHTML = "Loading...";
+      const snap = await getDocs(collection(db, "subjects"));
+      if(snap.empty) { c.innerHTML = "<p>No subjects added yet.</p>"; return; }
+      let html = '';
+      snap.forEach(d => {
+        const s = d.data();
+        html += `
+          <div class="data-item">
+            <div class="data-info">
+              <h4>${s.name} (Class ${s.class})</h4>
+              <p>Order: ${s.order || 1}</p>
+            </div>
+            <button class="btn btn-red" onclick="deleteDocData('subjects', '${d.id}')">Delete</button>
+          </div>
+        `;
+      });
+      c.innerHTML = html;
+    }
+
+    // ===== DYNAMIC TEST BUILDER =====
+    window.addQuestionToTemp = () => {
+      const text = document.getElementById('q-text').value;
+      const image = document.getElementById('q-image').value;
+      const correctRadio = document.querySelector('input[name="correct_opt"]:checked');
+      
+      if(!text) return alert("Question text required!");
+      if(!correctRadio) return alert("Please select the correct option!");
+      
+      const correctIndex = parseInt(correctRadio.value);
+      const options = [];
+      for(let i=0; i<4; i++) {
+        const optText = document.getElementById('q-opt-' + i).value;
+        if(!optText) return alert(`Option ${String.fromCharCode(65+i)} is empty!`);
+        options.push({ text: optText, image: "" });
+      }
+
+      const newQ = { text, image, options, correct: correctIndex };
+      tempQuestions.push(newQ);
+      
+      // Reset form
+      document.getElementById('q-text').value = '';
+      document.getElementById('q-image').value = '';
+      for(let i=0; i<4; i++) document.getElementById('q-opt-' + i).value = '';
+      document.querySelector('input[name="correct_opt"]:checked').checked = false;
+      document.getElementById('question-form').style.display = 'none';
+
+      renderTempQuestions();
+    };
+
+    function renderTempQuestions() {
+      const container = document.getElementById('questions-container');
+      document.getElementById('q-count-display').innerText = tempQuestions.length;
+      if(tempQuestions.length === 0) { container.innerHTML = ''; return; }
+      
+      let html = '';
+      tempQuestions.forEach((q, idx) => {
+        html += `
+          <div class="q-box">
+            <h4>Q${idx+1}: ${q.text}</h4>
+            <ul style="font-size:12px; margin-left:20px; margin-bottom:10px; color:var(--text-light);">
+              ${q.options.map((o,i) => `<li>${String.fromCharCode(65+i)}. ${o.text} ${i===q.correct?'<b style="color:green;">(Correct)</b>':''}</li>`).join('')}
+            </ul>
+            <button class="btn btn-red" onclick="removeTempQ(${idx})">Remove</button>
+          </div>
+        `;
+      });
+      container.innerHTML = html;
+    }
+
+    window.removeTempQ = (idx) => {
+      tempQuestions.splice(idx, 1);
+      renderTempQuestions();
+    };
+
+    window.publishTest = async () => {
+      const title = document.getElementById('test-title').value;
+      const subject = document.getElementById('test-subject').value;
+      const cls = document.getElementById('test-class').value;
+      const type = document.getElementById('test-type').value;
+      const duration = Number(document.getElementById('test-duration').value);
+      const marksPerQuestion = Number(document.getElementById('test-marks').value);
+      const negativeMarking = Number(document.getElementById('test-negative').value);
+      const imageUrl = document.getElementById('test-image').value;
+
+      if(!title || !subject) return alert("Test Title and Subject required!");
+      if(tempQuestions.length === 0) return alert("Please add at least 1 question!");
+
+      try {
+        await addDoc(collection(db, "tests"), {
+          title, subject, class: cls, type, duration, marksPerQuestion, negativeMarking, imageUrl, 
+          questions: tempQuestions,
+          createdAt: new Date()
+        });
+        alert("🚀 Test Published Successfully!");
+        
+        // Reset Form
+        document.getElementById('test-title').value = '';
+        document.getElementById('test-subject').value = '';
+        document.getElementById('test-image').value = '';
+        tempQuestions = [];
+        renderTempQuestions();
+        loadTestsList();
+      } catch(e) { alert("Error: " + e.message); }
+    };
+
+    async function loadTestsList() {
+      const c = document.getElementById('tests-list');
+      c.innerHTML = "Loading...";
+      const snap = await getDocs(collection(db, "tests"));
+      if(snap.empty) { c.innerHTML = "<p>No tests added yet.</p>"; return; }
+      let html = '';
+      snap.forEach(d => {
+        const t = d.data();
+        html += `
+          <div class="data-item">
+            <div class="data-info">
+              <h4>${t.title}</h4>
+              <p>Class ${t.class} • ${t.subject} • ${t.questions ? t.questions.length : 0} Qs • ${t.duration} mins</p>
+            </div>
+            <button class="btn btn-red" onclick="deleteDocData('tests', '${d.id}')">Delete</button>
+          </div>
+        `;
+      });
+      c.innerHTML = html;
+    }
+
+    // ===== COURSES =====
+    window.addCourse = async () => {
+      const title = document.getElementById('crs-title').value;
+      const subject = document.getElementById('crs-subject').value;
+      const cls = document.getElementById('crs-class').value;
+      const type = document.getElementById('crs-type').value;
+      const price = Number(document.getElementById('crs-price').value);
+      const imageUrl = document.getElementById('crs-image').value;
+      const videoUrl = document.getElementById('crs-video').value;
+
+      if(!title) return alert("Title required!");
+      try {
+        await addDoc(collection(db, "courses"), { title, subject, class: cls, type, price, imageUrl, videoUrl, validity: 'Lifetime' });
+        alert("✅ Course Added!");
+        document.getElementById('crs-title').value = '';
+        loadCoursesList();
+      } catch(e) { alert(e.message); }
+    };
+
+    async function loadCoursesList() {
+      const c = document.getElementById('courses-list');
+      c.innerHTML = "Loading...";
+      const snap = await getDocs(collection(db, "courses"));
+      if(snap.empty) { c.innerHTML = "<p>No courses added yet.</p>"; return; }
+      let html = '';
+      snap.forEach(d => {
+        const s = d.data();
+        html += `
+          <div class="data-item">
+            <div class="data-info">
+              <h4>${s.title} (Class ${s.class})</h4>
+              <p>${s.type.toUpperCase()} • ₹${s.price} • ${s.subject}</p>
+            </div>
+            <button class="btn btn-red" onclick="deleteDocData('courses', '${d.id}')">Delete</button>
+          </div>
+        `;
+      });
+      c.innerHTML = html;
+    }
+
+    // ===== NOTES & TIMETABLE =====
+    window.addNote = async () => {
+      const title = document.getElementById('note-title').value;
+      const subject = document.getElementById('note-subject').value;
+      const cls = document.getElementById('note-class').value;
+      const pdfUrl = document.getElementById('note-pdf').value;
+
+      if(!title || !pdfUrl) return alert("Title and PDF link required!");
+      try {
+        await addDoc(collection(db, "notes"), { title, subject, class: cls, pdfUrl });
+        alert("✅ Note Added!");
+        document.getElementById('note-title').value = '';
+        document.getElementById('note-pdf').value = '';
+      } catch(e) { alert(e.message); }
+    };
+
+    window.addTimetable = async () => {
+      const cls = document.getElementById('tt-class').value;
+      const day = document.getElementById('tt-day').value;
+      const subject = document.getElementById('tt-subject').value;
+      const time = document.getElementById('tt-time').value;
+
+      if(!day || !subject) return alert("Day and Subject required!");
+      try {
+        await addDoc(collection(db, "timetable"), { class: cls, day, subject, time });
+        alert("✅ Timetable Added!");
+        document.getElementById('tt-day').value = '';
+        document.getElementById('tt-subject').value = '';
+        document.getElementById('tt-time').value = '';
+      } catch(e) { alert(e.message); }
+    };
+
+    // ===== COMMON DELETE =====
+    window.deleteDocData = async (collectionName, id) => {
+      if(confirm("Are you sure you want to delete this?")) {
+        try {
+          await deleteDoc(doc(db, collectionName, id));
+          alert("Deleted!");
+          loadDashboardData(); // Refresh list
+        } catch(e) { alert(e.message); }
+      }
+    };
+
+  </script>
+</body>
+</html>
